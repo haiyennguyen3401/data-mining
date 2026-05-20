@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boolean HR · Customer Success Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0b1e38;
+  --navy2: #132b4f;
+  --navy3: #1c3a68;
+  --gold: #c9a84c;
+  --gold2: #e8c97a;
+  --teal: #1db896;
+  --red: #e05252;
+  --orange: #f59e1b;
+  --blue: #2c6fef;
+  --muted: #6b7fa3;
+  --border: rgba(255,255,255,.07);
+  --card: rgba(255,255,255,.04);
+  --text: #e8edf5;
+  --text2: #8da0bf;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--navy); color: var(--text); min-height: 100vh; overflow: hidden; }
+
+/* ─── NOISE TEXTURE OVERLAY ─── */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity:.4;
+}
+
+/* ─── LOGIN SCREEN ─── */
+#login-screen {
+  position:fixed; inset:0; z-index:100;
+  display:flex; align-items:center; justify-content:center;
+  background: radial-gradient(ellipse at 30% 40%, #132b4f 0%, #0b1e38 60%, #07131f 100%);
+  transition: opacity .5s, transform .5s;
+}
+#login-screen.hidden { opacity:0; pointer-events:none; transform:scale(1.04); }
+
+.login-card {
+  width: 380px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 40px 36px;
+  backdrop-filter: blur(20px);
+  position:relative;
+}
+.login-card::before {
+  content:''; position:absolute; top:-1px; left:30px; right:30px; height:2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  border-radius:2px;
+}
+.login-logo { text-align:center; margin-bottom:32px; }
+.login-logo-text { font-size:22px; font-weight:600; letter-spacing:-.01em; }
+.login-logo-text span { color:var(--gold); }
+.login-logo-sub { font-size:11px; color:var(--muted); margin-top:4px; letter-spacing:.06em; text-transform:uppercase; }
+
+.login-label { font-size:11px; color:var(--text2); margin-bottom:6px; font-weight:500; letter-spacing:.04em; text-transform:uppercase; }
+.login-field { margin-bottom:16px; }
+.login-input {
+  width:100%; padding:11px 14px; background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1); border-radius:8px;
+  color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; outline:none;
+  transition:border-color .2s;
+}
+.login-input:focus { border-color:var(--gold); }
+.login-input option { background:#132b4f; color:#e8edf5; }
+
+.login-btn {
+  width:100%; padding:12px; background:var(--gold); border:none; border-radius:8px;
+  color:#0b1e38; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600;
+  cursor:pointer; transition:background .2s, transform .1s; margin-top:8px;
+}
+.login-btn:hover { background:var(--gold2); }
+.login-btn:active { transform:scale(.98); }
+
+.login-error { color:#e05252; font-size:12px; margin-top:8px; display:none; text-align:center; }
+
+.login-accounts { margin-top:24px; padding-top:18px; border-top:1px solid var(--border); }
+.login-accounts-title { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:10px; }
+.demo-acc { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:7px; cursor:pointer; transition:background .15s; margin-bottom:4px; }
+.demo-acc:hover { background:rgba(255,255,255,.05); }
+.demo-avatar { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+.demo-name { font-size:12px; font-weight:500; color:var(--text); }
+.demo-role { font-size:10px; color:var(--muted); }
+.demo-badge { margin-left:auto; font-size:9px; font-weight:700; padding:2px 7px; border-radius:20px; }
+
+/* ─── APP SHELL ─── */
+#app { display:none; height:100vh; flex-direction:column; }
+#app.visible { display:flex; }
+
+/* TOPBAR */
+.topbar {
+  height:52px; background:rgba(11,30,56,.9); backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; padding:0 20px; gap:16px; flex-shrink:0; z-index:10;
+  position:relative;
+}
+.topbar::after { content:''; position:absolute; bottom:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--gold)30%,var(--gold)70%,transparent); opacity:.4; }
+.tb-logo { font-size:14px; font-weight:600; }
+.tb-logo span { color:var(--gold); }
+.tb-sep { width:1px; height:20px; background:var(--border); }
+.tb-title { font-size:12px; color:var(--text2); font-weight:400; }
+.tb-right { margin-left:auto; display:flex; align-items:center; gap:12px; }
+.tb-etl { font-size:11px; color:var(--teal); background:rgba(29,184,150,.1); border:1px solid rgba(29,184,150,.2); padding:4px 10px; border-radius:20px; display:flex; align-items:center; gap:5px; }
+.tb-etl-dot { width:6px; height:6px; border-radius:50%; background:var(--teal); }
+.tb-user { display:flex; align-items:center; gap:8px; cursor:pointer; padding:5px 10px; border-radius:8px; transition:background .15s; }
+.tb-user:hover { background:rgba(255,255,255,.06); }
+.tb-user-avatar { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; border:1.5px solid var(--gold); }
+.tb-user-name { font-size:12px; font-weight:500; }
+.tb-user-role { font-size:10px; color:var(--muted); }
+.tb-logout { font-size:11px; color:var(--muted); cursor:pointer; padding:5px 10px; border-radius:7px; border:1px solid var(--border); transition:all .15s; }
+.tb-logout:hover { border-color:var(--red); color:var(--red); }
+
+/* LAYOUT */
+.shell { display:flex; flex:1; overflow:hidden; }
+
+/* SIDEBAR */
+.sidebar { width:200px; background:rgba(11,30,56,.6); border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; padding:12px 0; }
+.sb-section { font-size:9px; font-weight:600; color:#3a5070; letter-spacing:.12em; text-transform:uppercase; padding:10px 18px 5px; }
+.sb-item { display:flex; align-items:center; gap:10px; padding:9px 18px; font-size:12px; color:var(--text2); cursor:pointer; border-left:2px solid transparent; transition:all .12s; }
+.sb-item:hover { background:rgba(255,255,255,.04); color:var(--text); }
+.sb-item.active { background:rgba(201,168,76,.08); color:var(--gold); border-left-color:var(--gold); font-weight:500; }
+.sb-icon { font-size:14px; width:18px; text-align:center; }
+.sb-badge { margin-left:auto; background:rgba(224,82,82,.8); color:#fff; font-size:9px; font-weight:700; padding:2px 6px; border-radius:10px; }
+.sb-spacer { flex:1; }
+.sb-footer { padding:12px 18px; font-size:10px; color:#3a5070; border-top:1px solid var(--border); line-height:1.7; }
+
+/* MAIN */
+.main { flex:1; overflow-y:auto; padding:20px 24px; }
+.main::-webkit-scrollbar { width:4px; }
+.main::-webkit-scrollbar-track { background:transparent; }
+.main::-webkit-scrollbar-thumb { background:var(--navy3); border-radius:2px; }
+
+/* FILTER BAR */
+.fbar { display:flex; align-items:center; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
+.flabel { font-size:11px; color:var(--text2); }
+.fsel { background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:7px; padding:6px 10px; font-size:12px; color:var(--text); font-family:'DM Sans',sans-serif; outline:none; cursor:pointer; transition:border-color .15s; }
+.fsel:hover, .fsel:focus { border-color:var(--gold); }
+.fsel option { background:#132b4f; }
+.fsel:disabled { opacity:.4; cursor:not-allowed; }
+.frls { margin-left:auto; font-size:10px; padding:5px 12px; border-radius:20px; border:1px solid rgba(29,184,150,.3); background:rgba(29,184,150,.08); color:var(--teal); display:flex; align-items:center; gap:5px; }
+
+/* VAS BANNER */
+.vas { display:grid; grid-template-columns:repeat(3,1fr); gap:0; background:rgba(201,168,76,.06); border:1px solid rgba(201,168,76,.2); border-radius:var(--radius); margin-bottom:18px; overflow:hidden; }
+.vas-item { padding:14px 20px; text-align:center; }
+.vas-item:not(:last-child) { border-right:1px solid rgba(201,168,76,.15); }
+.vas-lbl { font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; margin-bottom:5px; }
+.vas-val { font-size:22px; font-weight:700; color:var(--gold); font-family:'DM Mono',monospace; line-height:1; }
+.vas-sub { font-size:10px; color:var(--text2); margin-top:3px; }
+
+/* KPI STRIP */
+.kpi-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
+.kpi { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; position:relative; overflow:hidden; cursor:default; transition:border-color .2s; }
+.kpi:hover { border-color:rgba(201,168,76,.3); }
+.kpi-accent { position:absolute; top:0; left:0; width:3px; height:100%; border-radius:var(--radius) 0 0 var(--radius); }
+.kpi-lbl { font-size:10px; color:var(--text2); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; }
+.kpi-val { font-size:24px; font-weight:700; color:var(--text); font-family:'DM Mono',monospace; line-height:1; }
+.kpi-sub { font-size:11px; margin-top:5px; }
+.kpi-src { font-size:9px; color:#3a5070; margin-top:4px; }
+.up { color:var(--teal); } .down { color:var(--red); } .neutral { color:var(--muted); }
+
+/* SECTION TITLE */
+.sec-title { font-size:12px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.sec-sub { font-size:10px; color:var(--text2); margin-bottom:12px; }
+
+/* CHART GRID */
+.chart-grid { display:grid; grid-template-columns:2fr 1fr; gap:12px; margin-bottom:18px; }
+.chart-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; }
+
+/* BAR CHART */
+.bchart { display:flex; align-items:flex-end; gap:5px; height:100px; }
+.bg { display:flex; flex-direction:column; align-items:center; gap:3px; flex:1; }
+.bw { display:flex; align-items:flex-end; gap:2px; height:84px; width:100%; justify-content:center; }
+.b { border-radius:3px 3px 0 0; min-width:9px; cursor:pointer; transition:opacity .15s; }
+.b:hover { opacity:.7; }
+.bx { font-size:9px; color:#3a5070; }
+.bleg { display:flex; gap:12px; margin-top:8px; }
+.bleg-i { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--text2); }
+.bleg-d { width:8px; height:8px; border-radius:2px; }
+
+/* DONUT */
+.donut-outer { display:flex; flex-direction:column; align-items:center; }
+.donut-wrap { position:relative; display:flex; align-items:center; justify-content:center; }
+.donut-center { position:absolute; text-align:center; }
+.donut-cv { font-size:17px; font-weight:700; color:var(--text); font-family:'DM Mono',monospace; }
+.donut-cl { font-size:9px; color:var(--muted); }
+.dleg { display:flex; flex-direction:column; gap:5px; margin-top:10px; width:100%; }
+.drow { display:flex; justify-content:space-between; font-size:11px; color:var(--text2); align-items:center; }
+.ddot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:5px; }
+
+/* TABLE */
+.tbl-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; margin-bottom:18px; }
+.tbl-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+table { width:100%; border-collapse:collapse; }
+th { font-size:9px; color:#3a5070; text-transform:uppercase; letter-spacing:.06em; padding:7px 10px; border-bottom:1px solid var(--border); font-weight:600; text-align:left; }
+td { font-size:12px; color:var(--text); padding:9px 10px; border-bottom:1px solid rgba(255,255,255,.03); }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:rgba(255,255,255,.02); }
+.pbar { height:4px; border-radius:2px; background:rgba(255,255,255,.08); overflow:hidden; display:inline-block; min-width:60px; vertical-align:middle; }
+.pfill { height:100%; border-radius:2px; }
+.pill { display:inline-block; font-size:9px; font-weight:700; padding:2px 8px; border-radius:20px; }
+.pg { background:rgba(29,184,150,.15); color:var(--teal); }
+.po { background:rgba(245,158,27,.15); color:var(--orange); }
+.pr { background:rgba(224,82,82,.15); color:var(--red); }
+.pgo { background:rgba(201,168,76,.15); color:var(--gold); }
+
+/* GLOBAL COUNTRY GRID */
+.country-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:18px; }
+.country-card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:12px 14px; cursor:pointer; transition:all .15s; }
+.country-card:hover { border-color:rgba(201,168,76,.4); background:rgba(201,168,76,.05); }
+.country-card.selected { border-color:var(--gold); background:rgba(201,168,76,.08); }
+.cc-flag { font-size:18px; margin-bottom:6px; }
+.cc-name { font-size:11px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.cc-arr { font-size:14px; font-weight:700; color:var(--gold); font-family:'DM Mono',monospace; }
+.cc-obj { font-size:10px; margin-top:3px; }
+.cc-bar { height:3px; background:rgba(255,255,255,.08); border-radius:2px; margin-top:6px; overflow:hidden; }
+.cc-fill { height:100%; border-radius:2px; }
+
+/* TABS */
+.vtabs { display:flex; gap:0; margin-bottom:16px; }
+.vtab { padding:7px 15px; font-size:11px; font-weight:500; cursor:pointer; border:1px solid var(--border); color:var(--text2); background:transparent; transition:all .12s; }
+.vtab:first-child { border-radius:7px 0 0 7px; }
+.vtab:last-child { border-radius:0 7px 7px 0; }
+.vtab.active { background:rgba(201,168,76,.12); color:var(--gold); border-color:rgba(201,168,76,.3); }
+.vtab:not(:last-child) { border-right:none; }
+
+/* RESTRICTED BANNER */
+.rls-banner { background:rgba(44,111,239,.06); border:1px solid rgba(44,111,239,.2); border-radius:8px; padding:12px 16px; margin-bottom:16px; display:flex; align-items:center; gap:10px; font-size:12px; color:var(--text2); }
+.rls-icon { font-size:18px; }
+
+/* TOAST */
+#toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--navy2); border:1px solid var(--gold); border-radius:10px; padding:11px 20px; font-size:12px; z-index:9999; display:flex; align-items:center; gap:10px; box-shadow:0 8px 32px rgba(0,0,0,.4); opacity:0; transition:opacity .3s; pointer-events:none; }
+
+/* CHURN RISK VISUAL */
+.risk-meter { display:flex; align-items:center; gap:8px; margin-bottom:18px; }
+.rm-bar { flex:1; height:10px; border-radius:5px; background:rgba(255,255,255,.06); overflow:hidden; position:relative; }
+.rm-fill { height:100%; border-radius:5px; background:linear-gradient(90deg,var(--teal),var(--orange),var(--red)); }
+.rm-marker { position:absolute; top:-3px; width:2px; height:16px; background:#fff; border-radius:1px; }
+.rm-labels { display:flex; justify-content:space-between; font-size:9px; color:var(--muted); margin-top:4px; }
+
+@media(max-width:900px){
+  .kpi-strip { grid-template-columns:repeat(2,1fr); }
+  .country-grid { grid-template-columns:repeat(3,1fr); }
+  .chart-grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ LOGIN SCREEN ═══════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-text">Boolean <span>HR</span></div>
+      <div class="login-logo-sub">Customer Success Intelligence · Power BI</div>
+    </div>
+
+    <div class="login-field">
+      <div class="login-label">Compte</div>
+      <select class="login-input" id="login-select">
+        <option value="">— Sélectionner un compte —</option>
+        <option value="sofiya">Sofiya Mendez — VP Customer Success (Director)</option>
+        <option value="marie">Marie Dupont — CS Manager · France</option>
+        <option value="hans">Hans Müller — CS Manager · Allemagne</option>
+        <option value="lucia">Lucia García — CS Manager · Espagne</option>
+        <option value="james">James Carter — CS Manager · Royaume-Uni</option>
+      </select>
+    </div>
+    <div class="login-field">
+      <div class="login-label">Mot de passe</div>
+      <input class="login-input" type="password" id="login-pwd" placeholder="••••••••" value="demo1234">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Se connecter via Azure AD →</button>
+    <div class="login-error" id="login-err">Veuillez sélectionner un compte.</div>
+
+    <div class="login-accounts">
+      <div class="login-accounts-title">Comptes de démonstration (RLS Power BI)</div>
+      <div class="demo-acc" onclick="quickLogin('sofiya')">
+        <div class="demo-avatar" style="background:rgba(201,168,76,.15);color:var(--gold);">SF</div>
+        <div><div class="demo-name">Sofiya Mendez</div><div class="demo-role">VP Customer Success · Global</div></div>
+        <span class="demo-badge" style="background:rgba(201,168,76,.15);color:var(--gold);">DIRECTOR</span>
+      </div>
+      <div class="demo-acc" onclick="quickLogin('marie')">
+        <div class="demo-avatar" style="background:rgba(29,184,150,.12);color:var(--teal);">MD</div>
+        <div><div class="demo-name">Marie Dupont</div><div class="demo-role">CS Manager · France</div></div>
+        <span class="demo-badge" style="background:rgba(44,111,239,.12);color:#6fa3f7;">CS MGR</span>
+      </div>
+      <div class="demo-acc" onclick="quickLogin('hans')">
+        <div class="demo-avatar" style="background:rgba(245,158,27,.12);color:var(--orange);">HM</div>
+        <div><div class="demo-name">Hans Müller</div><div class="demo-role">CS Manager · Allemagne</div></div>
+        <span class="demo-badge" style="background:rgba(44,111,239,.12);color:#6fa3f7;">CS MGR</span>
+      </div>
+      <div class="demo-acc" onclick="quickLogin('lucia')">
+        <div class="demo-avatar" style="background:rgba(224,82,82,.12);color:var(--red);">LG</div>
+        <div><div class="demo-name">Lucia García</div><div class="demo-role">CS Manager · Espagne</div></div>
+        <span class="demo-badge" style="background:rgba(44,111,239,.12);color:#6fa3f7;">CS MGR</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ APP ═══════════════ -->
+<div id="app">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="tb-logo">Boolean <span>HR</span></div>
+    <div class="tb-sep"></div>
+    <div class="tb-title">Customer Success Intelligence</div>
+    <div class="tb-right">
+      <div class="tb-etl"><div class="tb-etl-dot"></div>ETL · 06h47 · OK</div>
+      <div class="tb-user">
+        <div class="tb-user-avatar" id="tb-avatar" style="background:#1e3a60;">SF</div>
+        <div>
+          <div class="tb-user-name" id="tb-name">Sofiya Mendez</div>
+          <div class="tb-user-role" id="tb-role">VP CS · Global</div>
+        </div>
+      </div>
+      <div class="tb-logout" onclick="doLogout()">Déconnexion</div>
+    </div>
+  </div>
+
+  <div class="shell">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sb-section">Navigation</div>
+      <div class="sb-item active" onclick="goView('overview')" id="sb-overview"><span class="sb-icon">📊</span>Vue d'ensemble</div>
+      <div class="sb-item" onclick="goView('performance')" id="sb-performance"><span class="sb-icon">🎯</span>Performance</div>
+      <div class="sb-item" onclick="goView('churn')" id="sb-churn"><span class="sb-icon">⚠️</span>Churn & Risques<span class="sb-badge" id="sb-risk-count">11%</span></div>
+      <div class="sb-item" onclick="goView('countries')" id="sb-countries" style="display:none;"><span class="sb-icon">🌍</span>Pays (25)</div>
+      <div class="sb-section">Valeur</div>
+      <div class="sb-item" onclick="goView('roi')" id="sb-roi"><span class="sb-icon">💰</span>Value at Stake</div>
+      <div class="sb-spacer"></div>
+      <div class="sb-footer" id="sb-footer">
+        <div id="sb-access-info" style="color:var(--teal);">🔒 RLS actif</div>
+        <div style="margin-top:3px;">Power BI · Azure AD</div>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main" id="main">
+
+      <!-- FILTER BAR -->
+      <div class="fbar" id="fbar">
+        <span class="flabel">Semaine :</span>
+        <select class="fsel"><option>S15 · 07–13 avr. 2026</option><option>S14</option><option>S13</option></select>
+        <span class="flabel">Pays :</span>
+        <select class="fsel" id="country-sel" onchange="onCountryChange()">
+          <option>Tous les pays (25)</option>
+          <option>🇫🇷 France</option>
+          <option>🇩🇪 Allemagne</option>
+          <option>🇪🇸 Espagne</option>
+          <option>🇬🇧 Royaume-Uni</option>
+          <option>🇮🇹 Italie</option>
+          <option>🇳🇱 Pays-Bas</option>
+        </select>
+        <div class="frls" id="rls-indicator">🔓 Accès global · Director</div>
+      </div>
+
+      <!-- ── VIEW: OVERVIEW ── -->
+      <div id="view-overview">
+        <div class="rls-banner" id="rls-banner" style="display:none;">
+          <span class="rls-icon">🔒</span>
+          <span id="rls-banner-text">Accès restreint à votre pays uniquement (Power BI Row-Level Security)</span>
+        </div>
+
+        <!-- VAS BANNER (director only) -->
+        <div class="vas" id="vas-block">
+          <div class="vas-item"><div class="vas-lbl">ARR / CA total géré</div><div class="vas-val" id="v-arr">€124,5M</div><div class="vas-sub">Ensemble du portefeuille</div></div>
+          <div class="vas-item"><div class="vas-lbl">Clients actifs</div><div class="vas-val" id="v-clients">9 180</div><div class="vas-sub">25 pays · 300 CS</div></div>
+          <div class="vas-item"><div class="vas-lbl">Churn rate mensuel</div><div class="vas-val" style="color:var(--red);" id="v-churn">2,4%</div><div class="vas-sub">Cible : &lt; 2%</div></div>
+        </div>
+
+        <!-- KPI STRIP — aligned with document -->
+        <div class="kpi-strip">
+          <div class="kpi">
+            <div class="kpi-accent" style="background:var(--gold);"></div>
+            <div class="kpi-lbl">ARR / CA total</div>
+            <div class="kpi-val" id="k-arr">€124,5M</div>
+            <div class="kpi-sub neutral" id="k-arr-sub">Portefeuille global</div>
+            <div class="kpi-src">KPI cours · Sofiya · pilotage global</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-accent" style="background:var(--teal);"></div>
+            <div class="kpi-lbl">Objectif vs Réalisé</div>
+            <div class="kpi-val" id="k-obj">92%</div>
+            <div class="kpi-sub up" id="k-obj-sub">▲ +3pt vs S-14</div>
+            <div class="kpi-src">KPI actionnable · décision corrective</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-accent" style="background:var(--blue);"></div>
+            <div class="kpi-lbl">Évolution WoW</div>
+            <div class="kpi-val down" id="k-wow">-1,8%</div>
+            <div class="kpi-sub neutral" id="k-wow-sub">vs semaine précédente</div>
+            <div class="kpi-src">Contexte temporel · anti-lecture statique</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-accent" style="background:var(--orange);"></div>
+            <div class="kpi-lbl">Taux de renouvellement</div>
+            <div class="kpi-val" id="k-renew">94%</div>
+            <div class="kpi-sub up" id="k-renew-sub">▲ Revenus futurs sécurisés</div>
+            <div class="kpi-src">KPI prédictif · pipeline futur</div>
+          </div>
+        </div>
+
+        <!-- SECOND KPI ROW -->
+        <div class="kpi-strip" style="margin-top:-6px;">
+          <div class="kpi">
+            <div class="kpi-accent" style="background:var(--red);"></div>
+            <div class="kpi-lbl">Churn rate mensuel</div>
+            <div class="kpi-val down" id="k-churnr">2,4%</div>
+            <div class="kpi-sub down">▼ Cible : &lt;2%</div>
+            <div class="kpi-src">Santé SaaS · attendu académiquement</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-accent" style="background:var(--orange);"></div>
+            <div class="kpi-lbl">Clients à risque</div>
+            <div class="kpi-val down" id="k-risk">11%</div>
+            <div class="kpi-sub down" id="k-risk-sub">≈ 1 010 clients</div>
+            <div class="kpi-src">Outil décision CS · pas juste reporting</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-accent" style="background:var(--teal);"></div>
+            <div class="kpi-lbl">NPS / CSAT</div>
+            <div class="kpi-val" id="k-nps">+42</div>
+            <div class="kpi-sub up">▲ Leading indicator churn</div>
+            <div class="kpi-src">Signal avancé · satisfaction client</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-accent" style="background:var(--blue);"></div>
+            <div class="kpi-lbl">Clients actifs</div>
+            <div class="kpi-val" id="k-active">9 180</div>
+            <div class="kpi-sub neutral" id="k-active-sub">Périmètre réel d'activité</div>
+            <div class="kpi-src">Comparaison cohérente pays/équipes</div>
+          </div>
+        </div>
+
+        <!-- CHARTS -->
+        <div class="chart-grid">
+          <div class="chart-card">
+            <div class="sec-title">CA réalisé vs Objectif — 8 semaines</div>
+            <div class="sec-sub" id="chart-sub">Global 25 pays · Données agrégées datamart</div>
+            <div class="bchart" id="bar-main"></div>
+            <div class="bleg">
+              <div class="bleg-i"><div class="bleg-d" style="background:var(--gold);"></div>CA réalisé</div>
+              <div class="bleg-i"><div class="bleg-d" style="background:rgba(255,255,255,.12);"></div>Objectif</div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="sec-title">Répartition CA S15</div>
+            <div class="sec-sub">Par type de revenus</div>
+            <div class="donut-outer">
+              <div class="donut-wrap">
+                <svg width="120" height="120" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="46" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="15"/>
+                  <circle cx="60" cy="60" r="46" fill="none" stroke="#c9a84c" stroke-width="15" stroke-dasharray="173 289" stroke-dashoffset="-72" stroke-linecap="round"/>
+                  <circle cx="60" cy="60" r="46" fill="none" stroke="#1db896" stroke-width="15" stroke-dasharray="87 289" stroke-dashoffset="-245" stroke-linecap="round"/>
+                  <circle cx="60" cy="60" r="46" fill="none" stroke="#2c6fef" stroke-width="15" stroke-dasharray="58 289" stroke-dashoffset="-332" stroke-linecap="round"/>
+                  <circle cx="60" cy="60" r="46" fill="none" stroke="#e05252" stroke-width="15" stroke-dasharray="29 289" stroke-dashoffset="-390" stroke-linecap="round"/>
+                </svg>
+                <div class="donut-center"><div class="donut-cv" id="donut-cv">€124,5M</div><div class="donut-cl">ARR total</div></div>
+              </div>
+              <div class="dleg">
+                <div class="drow"><span><span class="ddot" style="background:#c9a84c;"></span>Renouvellements</span><span style="font-weight:600;color:var(--text);">60%</span></div>
+                <div class="drow"><span><span class="ddot" style="background:#1db896;"></span>Upsell</span><span style="font-weight:600;color:var(--text);">30%</span></div>
+                <div class="drow"><span><span class="ddot" style="background:#2c6fef;"></span>Nouveaux</span><span style="font-weight:600;color:var(--text);">20%</span></div>
+                <div class="drow"><span><span class="ddot" style="background:#e05252;"></span>Récupérations</span><span style="font-weight:600;color:var(--text);">10%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── VIEW: COUNTRIES (director only) ── -->
+      <div id="view-countries" style="display:none;">
+        <div class="sec-title" style="margin-bottom:4px;">Tableau de bord — 25 pays</div>
+        <div class="sec-sub">Cliquez sur un pays pour voir le détail · Accès Director uniquement</div>
+        <div class="country-grid" id="country-grid"></div>
+        <div class="tbl-card">
+          <div class="tbl-hdr"><div class="sec-title">Détail pays sélectionné</div><span id="selected-country-name" style="font-size:11px;color:var(--text2);"></span></div>
+          <table>
+            <thead><tr><th>KPI</th><th>Valeur</th><th>vs Objectif</th><th>WoW</th><th>Statut</th></tr></thead>
+            <tbody id="country-detail-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── VIEW: PERFORMANCE ── -->
+      <div id="view-performance" style="display:none;">
+        <div class="vtabs">
+          <div class="vtab active" onclick="perfTab('team')" id="ptab-team">Mon équipe</div>
+          <div class="vtab" onclick="perfTab('portfolio')" id="ptab-portfolio">Portefeuille</div>
+        </div>
+        <div id="perf-team">
+          <div class="tbl-card">
+            <div class="tbl-hdr">
+              <div><div class="sec-title" id="perf-table-title">Performance CS — France · S15</div><div class="sec-sub">RLS actif · périmètre de votre pays</div></div>
+            </div>
+            <table>
+              <thead><tr><th>Commercial</th><th>ARR géré</th><th>Obj. vs Réal.</th><th>WoW</th><th>Renouvellement</th><th>Churn clients</th><th>Statut</th></tr></thead>
+              <tbody id="perf-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="perf-portfolio" style="display:none;">
+          <div class="tbl-card">
+            <div class="sec-title" style="margin-bottom:10px;">Portefeuille clients — <span id="port-country">France</span></div>
+            <table>
+              <thead><tr><th>Segment</th><th>Clients</th><th>ARR</th><th>Churn rate</th><th>Renouvellement</th><th>NPS</th><th>Risque</th></tr></thead>
+              <tbody>
+                <tr><td>Enterprise (&gt;500 emp.)</td><td>42</td><td>€18,4M</td><td style="color:var(--teal);">1,2%</td><td>97%</td><td>+58</td><td><span class="pill pg">Sain</span></td></tr>
+                <tr><td>Mid-Market (50–500)</td><td>186</td><td>€8,2M</td><td style="color:var(--orange);">2,8%</td><td>93%</td><td>+39</td><td><span class="pill po">Vigilance</span></td></tr>
+                <tr><td>SMB (&lt;50 emp.)</td><td>412</td><td>€3,6M</td><td style="color:var(--red);">4,1%</td><td>88%</td><td>+28</td><td><span class="pill pr">Risque</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── VIEW: CHURN ── -->
+      <div id="view-churn" style="display:none;">
+        <div class="kpi-strip" style="margin-bottom:14px;">
+          <div class="kpi"><div class="kpi-accent" style="background:var(--red);"></div><div class="kpi-lbl">Churn rate mensuel</div><div class="kpi-val down">2,4%</div><div class="kpi-sub down">Cible : &lt;2%</div></div>
+          <div class="kpi"><div class="kpi-accent" style="background:var(--orange);"></div><div class="kpi-lbl">Clients à risque</div><div class="kpi-val down">11%</div><div class="kpi-sub down">≈ 1 010 clients</div></div>
+          <div class="kpi"><div class="kpi-accent" style="background:var(--teal);"></div><div class="kpi-lbl">Taux renouvellement</div><div class="kpi-val">94%</div><div class="kpi-sub up">▲ Stable</div></div>
+          <div class="kpi"><div class="kpi-accent" style="background:var(--blue);"></div><div class="kpi-lbl">ARR à risque</div><div class="kpi-val down">€2,98M</div><div class="kpi-sub down">Si aucune action</div></div>
+        </div>
+        <div class="chart-card" style="margin-bottom:14px;">
+          <div class="sec-title">Jauge de risque churn global</div>
+          <div class="sec-sub">Basé sur signaux d'usage, fréquence contact, NPS</div>
+          <div class="risk-meter" style="margin-top:12px;">
+            <span style="font-size:10px;color:var(--teal);">Sain</span>
+            <div class="rm-bar" style="flex:1;">
+              <div class="rm-fill" style="width:100%;"></div>
+              <div class="rm-marker" style="left:24%;"></div>
+            </div>
+            <span style="font-size:10px;color:var(--red);">Critique</span>
+          </div>
+          <div class="rm-labels" style="margin-left:28px;margin-right:28px;"><span>0%</span><span>Actuel : 2,4%</span><span>Cible : 2%</span><span>5%</span></div>
+        </div>
+        <div class="tbl-card">
+          <div class="tbl-hdr"><div class="sec-title">⚠ Clients à risque prioritaires</div></div>
+          <table>
+            <thead><tr><th>Client</th><th>Pays</th><th>ARR</th><th>Usage 30j</th><th>NPS</th><th>Dernier contact</th><th>Renouvellement</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Acme Corp</strong><br><span style="font-size:9px;color:var(--red);">⚠ Entité fusionnée TechGiant</span></td><td>🇫🇷</td><td>€48k</td><td><div class="pbar" style="width:70px;"><div class="pfill" style="width:18%;background:var(--red);"></div></div> <span style="font-size:10px;color:var(--red);">18%</span></td><td style="color:var(--red);">-12</td><td style="color:var(--red);">42j</td><td style="color:var(--red);">J-15</td><td><span style="color:var(--gold);font-size:11px;cursor:pointer;font-weight:600;">Appeler →</span></td></tr>
+              <tr><td><strong>Innovatech SAS</strong></td><td>🇪🇸</td><td>€22k</td><td><div class="pbar" style="width:70px;"><div class="pfill" style="width:34%;background:var(--orange);"></div></div> <span style="font-size:10px;color:var(--orange);">34%</span></td><td style="color:var(--orange);">+8</td><td style="color:var(--orange);">28j</td><td>J-45</td><td><span style="color:var(--gold);font-size:11px;cursor:pointer;font-weight:600;">Email →</span></td></tr>
+              <tr><td><strong>Meridian GmbH</strong></td><td>🇩🇪</td><td>€35k</td><td><div class="pbar" style="width:70px;"><div class="pfill" style="width:41%;background:var(--orange);"></div></div> <span style="font-size:10px;color:var(--orange);">41%</span></td><td style="color:var(--orange);">+14</td><td>21j</td><td style="color:var(--orange);">J-30</td><td><span style="color:var(--gold);font-size:11px;cursor:pointer;font-weight:600;">RDV →</span></td></tr>
+              <tr><td><strong>Solaris Ltd</strong></td><td>🇬🇧</td><td>€28k</td><td><div class="pbar" style="width:70px;"><div class="pfill" style="width:52%;background:var(--orange);"></div></div> <span style="font-size:10px;color:var(--orange);">52%</span></td><td>+22</td><td>14j</td><td>J-60</td><td><span style="color:var(--gold);font-size:11px;cursor:pointer;font-weight:600;">Email →</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── VIEW: ROI ── -->
+      <div id="view-roi" style="display:none;">
+        <div style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.25);border-radius:12px;padding:20px 28px;margin-bottom:18px;">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px;">Value at Stake · Analyse ROI consolidée</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;">
+            <div style="text-align:center;padding:8px;border-right:1px solid rgba(201,168,76,.15);">
+              <div style="font-size:32px;font-weight:800;color:var(--gold);font-family:'DM Mono',monospace;">1,2M€</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:4px;">Value at Stake / an</div>
+              <div style="font-size:9px;color:var(--muted);margin-top:2px;">390k + 480k + 156k + 174k</div>
+            </div>
+            <div style="text-align:center;padding:8px;border-right:1px solid rgba(201,168,76,.15);">
+              <div style="font-size:32px;font-weight:800;color:var(--gold);font-family:'DM Mono',monospace;">567%</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:4px;">ROI projet</div>
+              <div style="font-size:9px;color:var(--muted);margin-top:2px;">Payback &lt;2 mois · Coût 180k€</div>
+            </div>
+            <div style="text-align:center;padding:8px;">
+              <div style="font-size:32px;font-weight:800;color:var(--gold);font-family:'DM Mono',monospace;">2,4%</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:4px;">% CA récupéré</div>
+              <div style="font-size:9px;color:var(--muted);margin-top:2px;">1,2M / 50M€ CA estimé</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;">
+          <div style="background:rgba(44,111,239,.06);border:1px solid rgba(44,111,239,.2);border-radius:10px;padding:14px 16px;border-left:3px solid var(--blue);">
+            <div style="font-size:11px;font-weight:700;color:#6fa3f7;margin-bottom:2px;">Sofiya</div>
+            <div style="font-size:9px;color:var(--muted);margin-bottom:8px;">VP Customer Success</div>
+            <div style="font-size:20px;font-weight:800;color:#6fa3f7;font-family:'DM Mono',monospace;">+390k€</div>
+            <div style="font-size:9px;color:var(--muted);margin-top:6px;">300 users × 1h/sem × 25€ × 52</div>
+          </div>
+          <div style="background:rgba(29,184,150,.06);border:1px solid rgba(29,184,150,.2);border-radius:10px;padding:14px 16px;border-left:3px solid var(--teal);">
+            <div style="font-size:11px;font-weight:700;color:var(--teal);margin-bottom:2px;">Kevin</div>
+            <div style="font-size:9px;color:var(--muted);margin-bottom:8px;">Junior Data Analyst</div>
+            <div style="font-size:20px;font-weight:800;color:var(--teal);font-family:'DM Mono',monospace;">+480k€</div>
+            <div style="font-size:9px;color:var(--muted);margin-top:6px;">400 clients × 3% churn × 40k€</div>
+          </div>
+          <div style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:14px 16px;border-left:3px solid var(--gold);">
+            <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:2px;">Lena</div>
+            <div style="font-size:9px;color:var(--muted);margin-bottom:8px;">Sales Finance Intern</div>
+            <div style="font-size:20px;font-weight:800;color:var(--gold);font-family:'DM Mono',monospace;">+156k€</div>
+            <div style="font-size:9px;color:var(--muted);margin-top:6px;">2 ETP × 60% auto. × 50k€</div>
+          </div>
+          <div style="background:rgba(224,82,82,.06);border:1px solid rgba(224,82,82,.2);border-radius:10px;padding:14px 16px;border-left:3px solid var(--red);">
+            <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:2px;">Giacomo</div>
+            <div style="font-size:9px;color:var(--muted);margin-bottom:8px;">Senior Data Engineer</div>
+            <div style="font-size:20px;font-weight:800;color:var(--red);font-family:'DM Mono',monospace;">+174k€</div>
+            <div style="font-size:9px;color:var(--muted);margin-top:6px;">1 200h downtime × 25€</div>
+          </div>
+        </div>
+        <!-- HORIZONTAL ROI BARS -->
+        <div class="tbl-card">
+          <div class="sec-title" style="margin-bottom:14px;">Contribution par segment (k€)</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;align-items:center;gap:10px;"><div style="width:70px;font-size:10px;color:var(--text2);text-align:right;">Kevin</div><div style="flex:1;height:24px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden;"><div style="height:100%;width:40%;background:rgba(29,184,150,.6);border-radius:4px;display:flex;align-items:center;padding-left:10px;"><span style="font-size:11px;font-weight:700;color:#0a4a36;">+480k€</span></div></div></div>
+            <div style="display:flex;align-items:center;gap:10px;"><div style="width:70px;font-size:10px;color:var(--text2);text-align:right;">Sofiya</div><div style="flex:1;height:24px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden;"><div style="height:100%;width:33%;background:rgba(44,111,239,.6);border-radius:4px;display:flex;align-items:center;padding-left:10px;"><span style="font-size:11px;font-weight:700;color:#d0e4ff;">+390k€</span></div></div></div>
+            <div style="display:flex;align-items:center;gap:10px;"><div style="width:70px;font-size:10px;color:var(--text2);text-align:right;">Giacomo</div><div style="flex:1;height:24px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden;"><div style="height:100%;width:14%;background:rgba(224,82,82,.6);border-radius:4px;display:flex;align-items:center;padding-left:10px;"><span style="font-size:11px;font-weight:700;color:#ffcccc;">+174k€</span></div></div></div>
+            <div style="display:flex;align-items:center;gap:10px;"><div style="width:70px;font-size:10px;color:var(--text2);text-align:right;">Lena</div><div style="flex:1;height:24px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden;"><div style="height:100%;width:13%;background:rgba(201,168,76,.6);border-radius:4px;display:flex;align-items:center;padding-left:10px;"><span style="font-size:11px;font-weight:700;color:#5a3c00;">+156k€</span></div></div></div>
+            <div style="display:flex;align-items:center;gap:10px;"><div style="width:70px;font-size:10px;color:var(--gold);font-weight:700;text-align:right;">TOTAL</div><div style="flex:1;height:28px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden;"><div style="height:100%;width:100%;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.3);border-radius:4px;display:flex;align-items:center;padding-left:12px;"><span style="font-size:12px;font-weight:700;color:var(--gold);">= 1 200 000 € / an · ROI 567% · Payback &lt;2 mois</span></div></div></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /shell -->
+</div><!-- /app -->
+
+<div id="toast"></div>
+
+<script>
+// ─── DATA ───
+const USERS = {
+  sofiya: { initials:'SF', name:'Sofiya Mendez', role:'VP Customer Success · Global', level:'director', country:null, bg:'rgba(201,168,76,.2)', color:'#c9a84c' },
+  marie:  { initials:'MD', name:'Marie Dupont',  role:'CS Manager · France',          level:'manager',  country:'France',      bg:'rgba(29,184,150,.15)', color:'#1db896' },
+  hans:   { initials:'HM', name:'Hans Müller',   role:'CS Manager · Allemagne',       level:'manager',  country:'Allemagne',   bg:'rgba(245,158,27,.15)', color:'#f59e1b' },
+  lucia:  { initials:'LG', name:'Lucia García',  role:'CS Manager · Espagne',         level:'manager',  country:'Espagne',     bg:'rgba(224,82,82,.15)',  color:'#e05252' },
+  james:  { initials:'JC', name:'James Carter',  role:'CS Manager · Royaume-Uni',     level:'manager',  country:'Royaume-Uni', bg:'rgba(44,111,239,.15)', color:'#2c6fef' },
+};
+
+const COUNTRY_DATA = {
+  'France':      { flag:'🇫🇷', arr:'€18,4M', obj:87, wow:-1.2, churn:2.8, renew:93, active:640,  nps:38, risk:13 },
+  'Allemagne':   { flag:'🇩🇪', arr:'€24,1M', obj:95, wow:+2.1, churn:1.8, renew:96, active:820,  nps:51, risk:8  },
+  'Espagne':     { flag:'🇪🇸', arr:'€9,2M',  obj:71, wow:-3.4, churn:3.6, renew:89, active:380,  nps:29, risk:17 },
+  'Royaume-Uni': { flag:'🇬🇧', arr:'€21,8M', obj:93, wow:+0.8, churn:2.1, renew:95, active:710,  nps:44, risk:10 },
+  'Italie':      { flag:'🇮🇹', arr:'€7,6M',  obj:65, wow:-4.1, churn:4.2, renew:86, active:310,  nps:22, risk:21 },
+  'Pays-Bas':    { flag:'🇳🇱', arr:'€11,3M', obj:89, wow:+1.4, churn:2.0, renew:94, active:420,  nps:47, risk:9  },
+  'Belgique':    { flag:'🇧🇪', arr:'€6,8M',  obj:82, wow:+0.3, churn:2.3, renew:92, active:260,  nps:41, risk:11 },
+  'Suède':       { flag:'🇸🇪', arr:'€8,9M',  obj:91, wow:+1.8, churn:1.9, renew:95, active:340,  nps:53, risk:8  },
+  'Pologne':     { flag:'🇵🇱', arr:'€4,2M',  obj:78, wow:-0.9, churn:3.1, renew:90, active:210,  nps:31, risk:14 },
+  'Portugal':    { flag:'🇵🇹', arr:'€3,8M',  obj:74, wow:-1.8, churn:3.4, renew:88, active:180,  nps:27, risk:16 },
+};
+
+const ALL_COUNTRIES = ['France','Allemagne','Espagne','Royaume-Uni','Italie','Pays-Bas','Belgique','Suède','Pologne','Portugal',
+  'Danemark','Finlande','Autriche','Suisse','Irlande','Grèce','Norvège','Tchéquie','Hongrie','Roumanie',
+  'États-Unis','Canada','Brésil','Australie','Singapour'];
+
+const PERF_DATA = {
+  France:     [{n:'Marie Dupont',arr:'€4,2M',obj:87,wow:-1.2,renew:93,churn:2.8},{n:'Lucas Martin',arr:'€3,8M',obj:82,wow:+1.1,renew:91,churn:3.0},{n:'Camille Robert',arr:'€3,1M',obj:76,wow:-2.3,renew:89,churn:3.4},{n:'Thomas Blanc',arr:'€4,0M',obj:85,wow:+0.5,renew:94,churn:2.5},{n:'Sophie Lemaire',arr:'€1,9M',obj:68,wow:-4.1,renew:85,churn:4.8}],
+  Allemagne:  [{n:'Hans Müller',arr:'€6,2M',obj:95,wow:+2.1,renew:97,churn:1.5},{n:'Anna Schmidt',arr:'€5,8M',obj:91,wow:+1.4,renew:96,churn:1.8},{n:'Max Weber',arr:'€6,4M',obj:98,wow:+3.2,renew:98,churn:1.2}],
+  Espagne:    [{n:'Lucia García',arr:'€2,8M',obj:71,wow:-3.4,renew:87,churn:4.1},{n:'Carlos López',arr:'€2,4M',obj:65,wow:-5.2,renew:84,churn:5.0},{n:'Ana Martínez',arr:'€3,1M',obj:78,wow:-1.8,renew:90,churn:3.5}],
+  'Royaume-Uni':[{n:'James Carter',arr:'€5,6M',obj:93,wow:+0.8,renew:95,churn:2.0},{n:'Emma Wilson',arr:'€5,2M',obj:90,wow:-0.3,renew:94,churn:2.3},{n:'Oliver Brown',arr:'€5,8M',obj:96,wow:+1.9,renew:97,churn:1.7}],
+};
+
+let currentUser = null;
+let selectedCountry = null;
+
+// ─── LOGIN ───
+function quickLogin(id) {
+  document.getElementById('login-select').value = id;
+  doLogin();
+}
+
+function doLogin() {
+  const id = document.getElementById('login-select').value;
+  if (!id) { document.getElementById('login-err').style.display='block'; return; }
+  document.getElementById('login-err').style.display='none';
+  currentUser = USERS[id];
+  document.getElementById('login-screen').classList.add('hidden');
+  setTimeout(()=>{ document.getElementById('app').classList.add('visible'); initApp(); }, 400);
+}
+
+function doLogout() {
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('login-select').value='';
+  currentUser = null;
+}
+
+// ─── INIT APP ───
+function initApp() {
+  const u = currentUser;
+
+  // Topbar
+  const av = document.getElementById('tb-avatar');
+  av.textContent = u.initials;
+  av.style.background = u.bg;
+  av.style.color = u.color;
+  document.getElementById('tb-name').textContent = u.name;
+  document.getElementById('tb-role').textContent = u.role;
+
+  // Sidebar
+  const sbCountries = document.getElementById('sb-countries');
+  if (u.level === 'director') {
+    sbCountries.style.display = 'flex';
+    document.getElementById('sb-access-info').innerHTML = '<span style="color:var(--gold);">🌐 Director · 25 pays</span>';
+    document.getElementById('rls-indicator').innerHTML = '🔓 Accès global · Director';
+    document.getElementById('rls-indicator').style.color = 'var(--gold)';
+    document.getElementById('rls-indicator').style.borderColor = 'rgba(201,168,76,.3)';
+    document.getElementById('rls-indicator').style.background = 'rgba(201,168,76,.08)';
+  } else {
+    sbCountries.style.display = 'none';
+    document.getElementById('sb-access-info').innerHTML = `<span style="color:var(--teal);">🔒 RLS · ${u.country} uniquement</span>`;
+    document.getElementById('rls-indicator').innerHTML = `🔒 RLS actif · ${u.country} uniquement`;
+    // Lock country filter
+    const sel = document.getElementById('country-sel');
+    sel.innerHTML = `<option>${u.country === 'France' ? '🇫🇷' : u.country === 'Allemagne' ? '🇩🇪' : u.country === 'Espagne' ? '🇪🇸' : '🇬🇧'} ${u.country}</option>`;
+    sel.disabled = true;
+    // Show RLS banner
+    document.getElementById('rls-banner').style.display='flex';
+    document.getElementById('rls-banner-text').textContent = `Accès restreint à votre pays (${u.country}) · Power BI Row-Level Security`;
+    // Adapt KPIs to country
+    adaptKPIsToCountry(u.country);
+  }
+
+  renderBarChart();
+  buildCountryGrid();
+  buildPerfTable();
+  goView('overview');
+  showToast(`Bienvenue, ${u.name.split(' ')[0]} · ${u.level === 'director' ? 'Accès Director · 25 pays' : 'Accès ' + u.country + ' (RLS)'}`);
+}
+
+function adaptKPIsToCountry(c) {
+  const d = COUNTRY_DATA[c];
+  if (!d) return;
+  document.getElementById('v-arr').textContent = d.arr;
+  document.getElementById('v-clients').textContent = d.active;
+  document.getElementById('v-churn').textContent = d.churn + '%';
+  document.getElementById('k-arr').textContent = d.arr;
+  document.getElementById('k-arr-sub').textContent = 'Portefeuille ' + c;
+  document.getElementById('k-obj').textContent = d.obj + '%';
+  document.getElementById('k-obj-sub').textContent = d.wow >= 0 ? '▲ +' + d.wow + 'pt WoW' : '▼ ' + d.wow + 'pt WoW';
+  document.getElementById('k-wow').textContent = (d.wow >= 0 ? '+' : '') + d.wow + '%';
+  document.getElementById('k-wow').className = 'kpi-val ' + (d.wow >= 0 ? 'up' : 'down');
+  document.getElementById('k-renew').textContent = d.renew + '%';
+  document.getElementById('k-churnr').textContent = d.churn + '%';
+  document.getElementById('k-risk').textContent = d.risk + '%';
+  document.getElementById('k-risk-sub').textContent = '≈ ' + Math.round(d.active * d.risk / 100) + ' clients';
+  document.getElementById('k-active').textContent = d.active;
+  document.getElementById('k-active-sub').textContent = 'Périmètre ' + c;
+  document.getElementById('chart-sub').textContent = c + ' · Données agrégées datamart';
+  document.getElementById('donut-cv').textContent = d.arr;
+}
+
+function onCountryChange() {
+  if (currentUser.level !== 'director') return;
+  const v = document.getElementById('country-sel').value;
+  if (v.includes('Tous')) {
+    // Reset to global
+    document.getElementById('k-arr').textContent = '€124,5M';
+    document.getElementById('k-obj').textContent = '92%';
+    document.getElementById('k-wow').textContent = '-1,8%';
+    document.getElementById('k-wow').className = 'kpi-val down';
+    document.getElementById('k-renew').textContent = '94%';
+    document.getElementById('chart-sub').textContent = 'Global 25 pays · Données agrégées datamart';
+    document.getElementById('donut-cv').textContent = '€124,5M';
+  } else {
+    const country = v.replace(/[^a-zA-ZÀ-ÿ\-]/g, '').replace(/^\s+|\s+$/g,'');
+    const match = Object.keys(COUNTRY_DATA).find(k => v.includes(k));
+    if (match) adaptKPIsToCountry(match);
+  }
+}
+
+// ─── VIEWS ───
+const VIEWS = ['overview','countries','performance','churn','roi'];
+function goView(v) {
+  VIEWS.forEach(id => {
+    const el = document.getElementById('view-' + id);
+    if (el) el.style.display = id === v ? '' : 'none';
+    const sb = document.getElementById('sb-' + id);
+    if (sb) sb.classList.toggle('active', id === v);
+  });
+  // Countries only for director
+  if (v === 'countries' && currentUser.level !== 'director') {
+    goView('overview');
+    showToast('Accès restreint · Vue pays réservée au Director');
+  }
+}
+
+// ─── PERF TABLE ───
+function buildPerfTable() {
+  const c = currentUser.level === 'director' ? 'France' : currentUser.country;
+  const rows = PERF_DATA[c] || PERF_DATA['France'];
+  document.getElementById('perf-table-title').textContent = `Performance CS — ${c} · S15`;
+  document.getElementById('port-country').textContent = c;
+  const tbody = document.getElementById('perf-tbody');
+  tbody.innerHTML = '';
+  rows.forEach(r => {
+    const color = r.obj >= 90 ? 'var(--teal)' : r.obj >= 75 ? 'var(--orange)' : 'var(--red)';
+    const pillClass = r.obj >= 90 ? 'pg' : r.obj >= 75 ? 'po' : 'pr';
+    const pillTxt = r.obj >= 90 ? 'Excellent' : r.obj >= 75 ? 'À surveiller' : 'En retard';
+    const wowStr = (r.wow >= 0 ? '+' : '') + r.wow + '%';
+    const wowColor = r.wow >= 0 ? 'var(--teal)' : 'var(--red)';
+    tbody.innerHTML += `<tr>
+      <td><strong>${r.n}</strong></td>
+      <td style="font-family:'DM Mono',monospace;">${r.arr}</td>
+      <td>
+        <div class="pbar" style="width:80px;vertical-align:middle;"><div class="pfill" style="width:${r.obj}%;background:${color};"></div></div>
+        <span style="font-size:11px;margin-left:5px;color:${color};">${r.obj}%</span>
+      </td>
+      <td style="color:${wowColor};font-family:'DM Mono',monospace;">${wowStr}</td>
+      <td style="color:var(--teal);">${r.renew}%</td>
+      <td style="color:${r.churn > 3 ? 'var(--red)' : r.churn > 2 ? 'var(--orange)' : 'var(--teal)'};">${r.churn}%</td>
+      <td><span class="pill ${pillClass}">${pillTxt}</span></td>
+    </tr>`;
+  });
+}
+
+function perfTab(t) {
+  document.getElementById('perf-team').style.display = t === 'team' ? '' : 'none';
+  document.getElementById('perf-portfolio').style.display = t === 'portfolio' ? '' : 'none';
+  document.getElementById('ptab-team').classList.toggle('active', t === 'team');
+  document.getElementById('ptab-portfolio').classList.toggle('active', t === 'portfolio');
+}
+
+// ─── COUNTRY GRID (director) ───
+function buildCountryGrid() {
+  const grid = document.getElementById('country-grid');
+  grid.innerHTML = '';
+  ALL_COUNTRIES.forEach((c, i) => {
+    const d = COUNTRY_DATA[c];
+    const flag = d ? d.flag : '🌐';
+    const arr = d ? d.arr : '€' + (Math.random()*8+1).toFixed(1) + 'M';
+    const obj = d ? d.obj : Math.floor(Math.random()*30+65);
+    const color = obj >= 90 ? 'var(--teal)' : obj >= 75 ? 'var(--orange)' : 'var(--red)';
+    const div = document.createElement('div');
+    div.className = 'country-card';
+    div.innerHTML = `<div class="cc-flag">${flag}</div><div class="cc-name">${c}</div><div class="cc-arr">${arr}</div><div class="cc-obj" style="color:${color};">${obj}% obj.</div><div class="cc-bar"><div class="cc-fill" style="width:${obj}%;background:${color};opacity:.7;"></div></div>`;
+    div.onclick = () => selectCountry(c, div);
+    grid.appendChild(div);
+  });
+}
+
+function selectCountry(c, el) {
+  document.querySelectorAll('.country-card').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedCountry = c;
+  document.getElementById('selected-country-name').textContent = '— ' + (COUNTRY_DATA[c] ? COUNTRY_DATA[c].flag : '🌐') + ' ' + c;
+  const d = COUNTRY_DATA[c];
+  const tbody = document.getElementById('country-detail-tbody');
+  if (!d) {
+    tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted);text-align:center;">Données détaillées non disponibles pour ce pays</td></tr>';
+    return;
+  }
+  const rows = [
+    { kpi:'ARR / CA total', val:d.arr, obj:'—', wow:'—', status:'<span class="pill pg">Clé</span>' },
+    { kpi:'Objectif vs Réalisé', val:d.obj+'%', obj:'90%', wow: (d.wow>=0?'+':'')+d.wow+'%', status:`<span class="pill ${d.obj>=90?'pg':d.obj>=75?'po':'pr'}">${d.obj>=90?'Excellent':d.obj>=75?'À surveiller':'Retard'}</span>` },
+    { kpi:'Évolution WoW', val:(d.wow>=0?'+':'')+d.wow+'%', obj:'>0%', wow:'—', status:`<span class="pill ${d.wow>=0?'pg':'pr'}">${d.wow>=0?'Positif':'Négatif'}</span>` },
+    { kpi:'Clients actifs', val:d.active, obj:'—', wow:'—', status:'<span class="pill pg">OK</span>' },
+    { kpi:'Churn rate mensuel', val:d.churn+'%', obj:'<2%', wow:'—', status:`<span class="pill ${d.churn<2?'pg':d.churn<3?'po':'pr'}">${d.churn<2?'Sain':d.churn<3?'Vigilance':'Critique'}</span>` },
+    { kpi:'Taux renouvellement', val:d.renew+'%', obj:'>95%', wow:'—', status:`<span class="pill ${d.renew>=95?'pg':d.renew>=90?'po':'pr'}">${d.renew>=95?'Excellent':d.renew>=90?'Bon':'À améliorer'}</span>` },
+    { kpi:'Clients à risque', val:d.risk+'%', obj:'<10%', wow:'—', status:`<span class="pill ${d.risk<10?'pg':d.risk<15?'po':'pr'}">${d.risk<10?'Sain':d.risk<15?'Vigilance':'Critique'}</span>` },
+    { kpi:'NPS / CSAT', val:'+'+d.nps, obj:'>40', wow:'—', status:`<span class="pill ${d.nps>=40?'pg':d.nps>=25?'po':'pr'}">${d.nps>=40?'Bon':d.nps>=25?'Moyen':'Faible'}</span>` },
+  ];
+  tbody.innerHTML = rows.map(r=>`<tr><td>${r.kpi}</td><td style="font-family:'DM Mono',monospace;font-weight:600;">${r.val}</td><td style="color:var(--muted);">${r.obj}</td><td style="color:var(--muted);">${r.wow}</td><td>${r.status}</td></tr>`).join('');
+}
+
+// ─── BAR CHART ───
+function renderBarChart() {
+  const weeksL = ['S8','S9','S10','S11','S12','S13','S14','S15'];
+  const caVals = [98,105,112,88,119,108,115,124];
+  const objVals= [110,110,115,115,130,130,130,143];
+  const maxV = 160;
+  const el = document.getElementById('bar-main');
+  if (!el) return;
+  el.innerHTML = '';
+  weeksL.forEach((w,i) => {
+    const hCA  = Math.round((caVals[i]/maxV)*84);
+    const hObj = Math.round((objVals[i]/maxV)*84);
+    const g = document.createElement('div');
+    g.className = 'bg';
+    g.innerHTML = `<div class="bw">
+      <div class="b" style="height:${hObj}px;width:10px;background:rgba(255,255,255,.1);"></div>
+      <div class="b" style="height:${hCA}px;width:10px;background:${caVals[i]>=objVals[i]?'var(--teal)':'var(--gold)'};"></div>
+    </div><div class="bx">${w}</div>`;
+    el.appendChild(g);
+  });
+}
+
+// ─── TOAST ───
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._t);
+  t._t = setTimeout(()=>{ t.style.opacity='0'; }, 3500);
+}
+</script>
+</body>
+</html>
